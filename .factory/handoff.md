@@ -40,8 +40,15 @@ npm audit --audit-level=high
 
 - Browser folder permissions do not expose absolute paths for directory-upload fallback. Equal roots are deliberately rejected; the File System Access path additionally detects nested directory handles.
 - A sampled read detects readable byte ranges, not media codec playback or a full restore. Keep originals until an independent restore succeeds.
-- The production factory deploy applies `dist/staticwebapp.config.json`; Vite preview does not emulate its HTTP header/404 behavior, so those are verified structurally in the build and should be rechecked at the live URL after deployment.
+- Vite preview does not emulate Static Web Apps response headers or 404 behavior. The production deployment was checked separately below.
 
 ## Deploy
 
 Static artifact: `dist/`. Push the committed `main` branch; the factory static deployment configuration consumes `dist/` and `staticwebapp.config.json`.
+
+Deployment was completed with `/opt/fleet/lib/deploy-static.sh photo-backup-sentinel /work/repo/dist` at 2026-08-28 10:33 UTC. The existing Central US Static Web App was reused and uploaded successfully.
+
+- `https://photo-backup-sentinel.sociobot.in/`: HTTP 200; deployed bundle `main-aetCVBkR.js` matches the repair build.
+- Live response includes the configured CSP, `Referrer-Policy`, and `X-Content-Type-Options`.
+- `https://photo-backup-sentinel.sociobot.in/demo/`: HTTP 200.
+- An unknown live route returned HTTP 404 and the authored recovery page.
