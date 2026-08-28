@@ -49,7 +49,7 @@ Results on 2026-08-28:
   page errors. Measured local production load: 543 ms.
 - Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
   SEO 100; LCP 1.5 s, total blocking time 0 ms, CLS 0.
-- Production build: 29.62 KB JS (11.33 KB gzip), 14.37 KB CSS (4.19 KB gzip).
+- Production build: 29.64 KB JS (11.33 KB gzip), 14.37 KB CSS (4.19 KB gzip).
   The complete shell is also inlined into the cached document for reliable
   cold-offline reload. Hero: 66 KB AVIF / 199 KB WebP. No webfonts.
 - `npm audit`: zero vulnerabilities.
