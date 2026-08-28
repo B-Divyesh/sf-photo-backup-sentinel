@@ -1,7 +1,8 @@
-const VERSION = 'sentinel-v4';
+const VERSION = 'sentinel-v6';
 const BUILD_ASSETS = /*__PRECACHE__*/[];
 const SHELL = [
-  '/', '/offline.html', '/manifest.webmanifest', '/assets/sentinel-hero.webp', '/assets/sentinel-hero.avif',
+  '/', '/demo/', '/privacy/', '/terms/', '/offline.html', '/404.html', '/manifest.webmanifest', '/legal.css', '/favicon.svg',
+  '/assets/sentinel-hero.webp', '/assets/sentinel-hero.avif',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png',
   ...BUILD_ASSETS
 ];
@@ -28,10 +29,10 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () => (await caches.match(request)) || (await caches.match('/')) || caches.match('/offline.html')));
+    event.respondWith(caches.match('/').then(cached => cached || fetch(request).catch(() => caches.match('/offline.html'))));
     return;
   }
-  event.respondWith(caches.match(request, { ignoreSearch: true }).then(cached => cached || fetch(request).then(response => {
+  event.respondWith(caches.match(request, { ignoreSearch: true }).then(cached => cached || caches.match(url.pathname, { ignoreSearch: true })).then(cached => cached || fetch(request).then(response => {
     if (response.ok) event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, response.clone())));
     return response;
   })));

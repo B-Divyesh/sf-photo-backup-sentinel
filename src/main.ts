@@ -1,6 +1,6 @@
 import './styles.css';
 import { formatBytes, scanMedia, type ScanItem, type ScanProgress, type ScanReport } from './scanner';
-import { getReports, importReports, saveReport } from './storage';
+import { clearReports, getReports, importReports, saveReport, setStorageNamespace } from './storage';
 import { cachedProState, captureLicenseFromUrl, checkoutUrl, getStoredLicense, storeLicense, verifyLicense } from './license';
 
 declare global {
@@ -14,10 +14,16 @@ let sourceFiles: File[] = [];
 let backupFiles: File[] = [];
 let sourceLabel = '';
 let backupLabel = '';
+let sourceHandle: FileSystemDirectoryHandle | null = null;
+let backupHandle: FileSystemDirectoryHandle | null = null;
 let currentReport: ScanReport | null = null;
 let reportHistory: ScanReport[] = [];
 let activeFilter: Filter = 'all';
 let isPro = false;
+let activeScan: AbortController | null = null;
+const demoMode = location.pathname === '/demo/' || location.pathname === '/demo' || new URLSearchParams(location.search).has('demo');
+
+setStorageNamespace(demoMode ? 'demo' : 'real');
 
 captureLicenseFromUrl();
 isPro = cachedProState();
@@ -32,14 +38,15 @@ app.innerHTML = `
       <a href="#license">Sentinel Pro</a>
     </nav>
   </header>
-  <main id="main">
+  ${demoMode ? `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data.</strong> Nothing is saved to your real history. <button class="text-button" id="reset-demo" type="button">Reset demo</button><a href="/">Start for real</a></aside>` : ''}
+  <main id="main" tabindex="-1">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow"><span>Local proof system</span> // no uploads</p>
-        <h1 id="hero-title">Two copies.<br><em>Prove it.</em></h1>
-        <p class="hero-lede">Find the photos and Live Photo halves your backup missed—before your phone fills up or disappears.</p>
-        <a class="button button-primary" href="#checker">Check my backup <span aria-hidden="true">↓</span></a>
-        <p class="microcopy">Runs in this browser. Your photos never leave this device.</p>
+        <h1 id="hero-title">Check your<br><em>photo backup.</em></h1>
+        <p class="hero-lede">For phone owners who copy photos to a drive or NAS, find missing files before deleting the originals.</p>
+        <div class="hero-actions"><a class="button button-primary" href="/demo/">Try it with sample data <span aria-hidden="true">↓</span></a><a class="hero-link" href="#checker">Check my backup</a></div>
+        <p class="microcopy">Sample data opens a finished check. Local only. Free safety checks.</p>
       </div>
       <figure class="hero-art">
         <picture><source srcset="/assets/sentinel-hero.avif" type="image/avif" /><img src="/assets/sentinel-hero.webp" width="1152" height="768" alt="Zine collage of a two-reel cassette, a photo strip, and two backup drives" fetchpriority="high" decoding="async" /></picture>
@@ -60,7 +67,7 @@ app.innerHTML = `
           <h3 id="source-title">Phone export</h3>
           <p>The folder copied from your iPhone or Android device.</p>
           <button class="button button-dark" id="choose-source" type="button">Choose export folder</button>
-          <input class="visually-hidden" id="source-input" type="file" webkitdirectory multiple aria-label="Choose phone export folder" />
+          <input class="visually-hidden" id="source-input" type="file" webkitdirectory multiple tabindex="-1" aria-hidden="true" />
           <p class="selection" id="source-selection">No folder selected</p>
         </section>
         <div class="path-arrow" aria-hidden="true">→</div>
@@ -69,7 +76,7 @@ app.innerHTML = `
           <h3 id="backup-title">Second copy</h3>
           <p>Your external drive, mounted NAS, or another local folder.</p>
           <button class="button button-dark" id="choose-backup" type="button">Choose backup folder</button>
-          <input class="visually-hidden" id="backup-input" type="file" webkitdirectory multiple aria-label="Choose backup destination folder" />
+          <input class="visually-hidden" id="backup-input" type="file" webkitdirectory multiple tabindex="-1" aria-hidden="true" />
           <p class="selection" id="backup-selection">No folder selected</p>
         </section>
         <div class="path-arrow" aria-hidden="true">→</div>
@@ -85,9 +92,9 @@ app.innerHTML = `
       <div class="progress-panel" id="progress-panel" hidden aria-live="polite">
         <div class="progress-meta"><strong id="progress-label">Preparing check…</strong><span id="progress-count">0 / 0</span></div>
         <progress id="scan-progress" max="100" value="0">0%</progress>
-        <button class="text-button" id="cancel-check" type="button">Stop after current file</button>
+        <button class="text-button" id="cancel-check" type="button">Stop check</button>
       </div>
-      <div class="message" id="error-message" role="alert" hidden></div>
+      <div class="message" id="error-message" role="alert" tabindex="-1" hidden></div>
     </section>
 
     <section class="results-section" id="results" aria-labelledby="results-title" hidden>
@@ -124,7 +131,7 @@ app.innerHTML = `
     <section class="history-section" aria-labelledby="history-title">
       <div class="section-heading">
         <div><span class="section-kicker">Check log</span><h2 id="history-title">Evidence saved on this device</h2><p>Only filenames, hashes, sizes, and check outcomes are stored. Media bytes are never saved.</p></div>
-        <div class="export-actions"><button class="text-button" id="import-data" type="button">Import history</button><input class="visually-hidden" id="import-input" type="file" accept="application/json" aria-label="Import Sentinel JSON history" /></div>
+        <div class="export-actions"><button class="text-button" id="import-data" type="button">Import history</button><input class="visually-hidden" id="import-input" type="file" accept="application/json" tabindex="-1" aria-hidden="true" /></div>
       </div>
       <div id="history-list" class="history-list"></div>
     </section>
@@ -152,7 +159,7 @@ app.innerHTML = `
     <div class="wordmark footer-mark"><span>PB/S</span><small>REC 02</small></div>
     <p>Proof for people who keep their own photos. Built local-first; no analytics or media uploads.</p>
     <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#how">Method</a></nav>
-    <p class="generated-note">Hero artwork was generated for this product with the factory image model.</p>
+    <p class="generated-note">Hero artwork was generated for this product with the factory image model. Build 1.0.1.</p>
   </footer>
   <div class="update-toast" id="update-toast" role="status" hidden>App update ready. <button type="button" id="reload-app">Reload</button></div>
 `;
@@ -181,9 +188,9 @@ function folderName(files: File[], fallback: string): string {
   return path?.split('/')[0] || fallback;
 }
 
-function updatePicker(kind: 'source' | 'backup', files: File[], label: string): void {
-  if (kind === 'source') { sourceFiles = files; sourceLabel = label; }
-  else { backupFiles = files; backupLabel = label; }
+function updatePicker(kind: 'source' | 'backup', files: File[], label: string, handle: FileSystemDirectoryHandle | null = null): void {
+  if (kind === 'source') { sourceFiles = files; sourceLabel = label; sourceHandle = handle; }
+  else { backupFiles = files; backupLabel = label; backupHandle = handle; }
   const mediaCount = files.filter(file => /\.(jpe?g|heic|heif|png|webp|gif|dng|tiff?|mov|mp4|m4v|avi|3gp)$/i.test(file.name)).length;
   const output = document.querySelector(`#${kind}-selection`)!;
   output.textContent = `${label} — ${mediaCount.toLocaleString()} media file${mediaCount === 1 ? '' : 's'}`;
@@ -200,10 +207,44 @@ async function chooseDirectory(kind: 'source' | 'backup'): Promise<void> {
   try {
     const handle = await window.showDirectoryPicker({ mode: 'read' });
     const files = await filesFromDirectory(handle);
-    updatePicker(kind, files, handle.name);
+    updatePicker(kind, files, handle.name, handle);
   } catch (error) {
     if ((error as DOMException).name !== 'AbortError') showError(`That folder could not be opened. ${(error as Error).message}`);
   }
+}
+
+function sampleFile(name: string, content: string, modified: number): File {
+  return new File([content], name, { type: 'application/octet-stream', lastModified: modified });
+}
+
+async function loadSampleDemo(): Promise<void> {
+  const modified = new Date('2026-08-21T12:00:00Z').getTime();
+  updatePicker('source', [
+    sampleFile('IMG_8172.HEIC', 'harbour-sunrise-still', modified),
+    sampleFile('IMG_8172.MOV', 'harbour-sunrise-motion', modified),
+    sampleFile('IMG_8173.HEIC', 'family-garden-still', modified),
+    sampleFile('IMG_8173.MOV', 'family-garden-motion', modified)
+  ], 'Sample phone export');
+  updatePicker('backup', [
+    sampleFile('Archive_8172.HEIC', 'harbour-sunrise-still', modified),
+    sampleFile('Archive_8172.MOV', 'harbour-sunrise-motion', modified),
+    sampleFile('Archive_8173.MOV', 'family-garden-motion', modified)
+  ], 'Sample external drive');
+  await runCheck();
+}
+
+async function foldersOverlap(): Promise<boolean> {
+  if (!sourceFiles.length || !backupFiles.length) return false;
+  if (sourceHandle && backupHandle) {
+    if (await sourceHandle.isSameEntry(backupHandle)) return true;
+    const backupInsideSource = await sourceHandle.resolve(backupHandle);
+    const sourceInsideBackup = await backupHandle.resolve(sourceHandle);
+    return backupInsideSource !== null || sourceInsideBackup !== null;
+  }
+  // Directory-upload fallback intentionally refuses equal roots. Browser
+  // privacy rules do not expose absolute paths there, so accepting one named
+  // root twice would be an unsafe certification rather than an honest check.
+  return sourceLabel.trim().toLocaleLowerCase() === backupLabel.trim().toLocaleLowerCase();
 }
 
 function showError(message: string): void {
@@ -314,17 +355,24 @@ async function runCheck(): Promise<void> {
   const button = document.querySelector<HTMLButtonElement>('#run-check')!;
   const panel = document.querySelector<HTMLElement>('#progress-panel')!;
   hideError();
+  if (await foldersOverlap()) {
+    showError('Choose two separate, non-overlapping folders. Sentinel cannot certify one folder as both the phone export and its second copy.');
+    return;
+  }
   button.disabled = true;
   button.textContent = 'Checking…';
   panel.hidden = false;
+  activeScan = new AbortController();
   try {
-    const report = await scanMedia(sourceFiles, backupFiles, sourceLabel, backupLabel, updateProgress);
+    const report = await scanMedia(sourceFiles, backupFiles, sourceLabel, backupLabel, updateProgress, activeScan.signal);
     await saveReport(report, isPro ? 30 : 3);
     await refreshHistory();
     renderReport(report);
   } catch (error) {
-    showError((error as Error).message || 'The check stopped unexpectedly. Choose the folders again and retry.');
+    if ((error as DOMException).name === 'AbortError') showError('Check stopped. No report was saved. Choose the folders and run the check again when you are ready.');
+    else showError((error as Error).message || 'The check stopped unexpectedly. Choose the folders again and retry.');
   } finally {
+    activeScan = null;
     button.disabled = false;
     button.textContent = 'Run backup check';
     panel.hidden = true;
@@ -357,7 +405,7 @@ for (const kind of ['source', 'backup'] as const) {
   });
 }
 document.querySelector('#run-check')!.addEventListener('click', runCheck);
-document.querySelector('#cancel-check')!.addEventListener('click', () => showError('For file integrity, Sentinel finishes the current read before stopping. Reload the page to stop this check now.'));
+document.querySelector('#cancel-check')!.addEventListener('click', () => activeScan?.abort());
 document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(button => button.addEventListener('click', () => {
   activeFilter = button.dataset.filter as Filter;
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
@@ -374,7 +422,7 @@ document.querySelector<HTMLInputElement>('#import-input')!.addEventListener('cha
     if (data.format !== 'photo-backup-sentinel/v1' || !Array.isArray(data.reports)) throw new Error('Not a Sentinel history export.');
     await importReports(data.reports, isPro ? 30 : 3);
     await refreshHistory();
-  } catch (error) { showError(`History was not imported. ${(error as Error).message}`); }
+  } catch { showError('History was not imported. Choose a Sentinel JSON export, then try again.'); }
 });
 document.querySelector('#history-list')!.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-report-id]');
@@ -399,6 +447,15 @@ updateNetworkStatus();
 updateLicenseUi();
 refreshHistory().catch(() => showError('Saved check history is unavailable in this browser. You can still run a check and export its report.'));
 checkLicense();
+
+if (demoMode) {
+  document.querySelector('#reset-demo')?.addEventListener('click', async () => {
+    await clearReports();
+    await refreshHistory();
+    await loadSampleDemo();
+  });
+  loadSampleDemo().catch(() => showError('The sample check could not start. Reset the demo and try again.'));
+}
 
 if ('serviceWorker' in navigator) {
   addEventListener('load', async () => {

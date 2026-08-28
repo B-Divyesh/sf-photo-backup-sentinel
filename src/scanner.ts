@@ -50,6 +50,14 @@ export interface ScanProgress {
   message: string;
 }
 
+export function scanAborted(): DOMException {
+  return new DOMException('The backup check was stopped. No report was saved.', 'AbortError');
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw scanAborted();
+}
+
 function extension(name: string): string {
   const part = name.split('.').pop();
   return part && part !== name ? part.toLowerCase() : '';
@@ -93,24 +101,34 @@ export function formatBytes(bytes: number): string {
   return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[index]}`;
 }
 
-export async function hashFile(file: Blob): Promise<string> {
+export async function hashFile(file: Blob, signal?: AbortSignal): Promise<string> {
   const hasher = sha256.create();
   const reader = file.stream().getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    hasher.update(value);
+  try {
+    while (true) {
+      throwIfAborted(signal);
+      const { done, value } = await reader.read();
+      if (done) break;
+      throwIfAborted(signal);
+      hasher.update(value);
+    }
+  } finally {
+    if (signal?.aborted) await reader.cancel();
   }
   return [...hasher.digest()].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function readEdges(file: File): Promise<boolean> {
+async function readEdges(file: File, signal?: AbortSignal): Promise<boolean> {
   try {
+    throwIfAborted(signal);
     const edge = 64 * 1024;
     await file.slice(0, Math.min(edge, file.size)).arrayBuffer();
+    throwIfAborted(signal);
     if (file.size > edge) await file.slice(Math.max(0, file.size - edge), file.size).arrayBuffer();
+    throwIfAborted(signal);
     return true;
   } catch {
+    throwIfAborted(signal);
     return false;
   }
 }
@@ -120,8 +138,10 @@ export async function scanMedia(
   backupFiles: File[],
   sourceLabel: string,
   backupLabel: string,
-  onProgress: (progress: ScanProgress) => void = () => undefined
+  onProgress: (progress: ScanProgress) => void = () => undefined,
+  signal?: AbortSignal
 ): Promise<ScanReport> {
+  throwIfAborted(signal);
   const source = sourceFiles.filter(file => isMedia(file.name));
   const backup = backupFiles.filter(file => isMedia(file.name));
   if (!source.length) throw new Error('The phone export contains no supported photos or videos. Choose the folder that contains the exported media.');
@@ -132,9 +152,10 @@ export async function scanMedia(
   const backupHashes = new Map<string, File[]>();
 
   for (let index = 0; index < relevantBackup.length; index += 1) {
+    throwIfAborted(signal);
     const file = relevantBackup[index];
     onProgress({ stage: 'hashing-backup', done: index, total: relevantBackup.length, message: `Hashing backup ${index + 1} of ${relevantBackup.length}: ${file.name}` });
-    const hash = await hashFile(file);
+    const hash = await hashFile(file, signal);
     const matches = backupHashes.get(hash) || [];
     matches.push(file);
     backupHashes.set(hash, matches);
@@ -146,9 +167,10 @@ export async function scanMedia(
   const recentBoundary = Date.now() - 90 * 24 * 60 * 60 * 1000;
 
   for (let index = 0; index < source.length; index += 1) {
+    throwIfAborted(signal);
     const file = source[index];
     onProgress({ stage: 'hashing-source', done: index, total: source.length, message: `Checking export ${index + 1} of ${source.length}: ${file.name}` });
-    const hash = await hashFile(file);
+    const hash = await hashFile(file, signal);
     const match = backupHashes.get(hash)?.[0];
     const fileStem = stem(file.name);
     const ext = extension(file.name);
@@ -180,12 +202,15 @@ export async function scanMedia(
 
   let sampled = 0;
   for (const item of results) {
+    throwIfAborted(signal);
     if (!sampleIds.has(item.id)) continue;
     sampled += 1;
     onProgress({ stage: 'sampling', done: sampled - 1, total: sampleIds.size, message: `Opening sample ${sampled} of ${sampleIds.size}: ${item.name}` });
-    const readable = await readEdges(matchedFiles.get(item.id)!);
+    const readable = await readEdges(matchedFiles.get(item.id)!, signal);
     item.readState = readable ? 'sampled-readable' : 'read-failed';
   }
+
+  throwIfAborted(signal);
 
   for (const item of results) {
     if (!item.liveRole) continue;

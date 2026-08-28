@@ -2,10 +2,19 @@ import type { ScanReport } from './scanner';
 
 const DB_NAME = 'photo-backup-sentinel';
 const STORE = 'checks';
+let namespace = 'real';
+
+export function setStorageNamespace(nextNamespace: 'real' | 'demo'): void {
+  namespace = nextNamespace;
+}
+
+export function currentStorageName(): string {
+  return namespace === 'demo' ? `demo:${DB_NAME}` : DB_NAME;
+}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(currentStorageName(), 1);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE)) {
         request.result.createObjectStore(STORE, { keyPath: 'id' });
@@ -14,6 +23,17 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
+
+export async function clearReports(): Promise<void> {
+  const database = await openDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(STORE, 'readwrite');
+    transaction.objectStore(STORE).clear();
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
 }
 
 export async function saveReport(report: ScanReport, historyLimit: number): Promise<void> {

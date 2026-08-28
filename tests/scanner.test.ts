@@ -22,6 +22,12 @@ describe('media scanner', () => {
     expect(await hashFile(new Blob(['sentinel']))).toBe('2b7847b7b705781d7cf21a05e9c1bb37cbf078aea103bc3edcc6aca52ab65453');
   });
 
+  it('stops a scan before a file is certified when its abort signal is raised', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(scanMedia([media('IMG_10.HEIC', 'still')], [media('copy.HEIC', 'still')], 'Phone', 'Drive', () => undefined, controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
   it('matches renamed identical content and flags a broken Live Photo pair', async () => {
     const source = [media('IMG_10.HEIC', 'still'), media('IMG_10.MOV', 'motion'), media('new.jpg', 'unique')];
     const backup = [media('renamed.heic', 'still'), media('old.jpg', 'something else')];

@@ -1,43 +1,47 @@
-# Photo Backup Sentinel — independent verification handoff
+# Photo Backup Sentinel — repair handoff
 
-## Status: FAIL — do not release
+## Status: ready for static deployment
 
-Independent verification was completed on 2026-08-28 UTC against candidate `d2f761a27ebba8bef57f57c000708fc8803f547a` and <https://photo-backup-sentinel.sociobot.in>. Production `index.html`, service worker, JS, and CSS are byte-for-byte identical to the candidate build, so the failures are in the candidate rather than deployment drift.
+This repair addresses every release-blocking finding from independent report `verification-1.md` against candidate `d2f761a27ebba8bef57f57c000708fc8803f547a`.
 
-Full evidence: [verification-1.md](verification-1.md).
+## Repairs
 
-## Release blockers
+- Added `.factory/claims.json` with 11 visitor-facing claims and one exact `@claim:` Playwright test tag for each.
+- Added `/demo/` as a seeded, one-click check with renamed exact copies and an incomplete Live Photo pair. The persistent demo banner has **Reset demo** and **Start for real** controls. Demo reports use `demo:photo-backup-sentinel`; real reports remain in `photo-backup-sentinel`. See `.factory/demo.md`.
+- Rejects identical and nested source/backup handles with `isSameEntry`/`resolve`. The directory-upload fallback refuses equal folder roots instead of certifying an unsafe second copy.
+- Implemented cancellation through `AbortController` and the hashing/read loops. A stopped check ends with a clear message and saves no report.
+- Reworked legal routes with skip links, landmarks, consistent navigation/footer build id, and high-contrast footer links. Hidden file inputs are removed from keyboard navigation; the visible picker buttons remain the operable controls.
+- Added static response configuration: CSP, referrer/content-type headers, immutable hashed-asset caching, and an authored `404.html` with Azure Static Web Apps 404 override.
+- Added canonical/Open Graph/Twitter metadata, SVG favicon, Apple touch icon, demo sitemap entry, and a CSP-compatible external asset build. The versioned `sentinel-v6` worker precaches all routes/assets and now serves the cached shell first for dependable offline reload.
+- Added copy audit and clearer malformed-import guidance without parser jargon.
 
-- `.factory/claims.json` is missing. No mandatory claim tests exist, while the site and README make many unlisted privacy, offline, export, persistence, and verification claims.
-- The cold first screen has no “Try it with sample data” action. `/demo` is only the ordinary app; there is no seeded sandbox, banner, reset/start controls, separate namespace, or `.factory/demo.md`.
-- Selecting the same folder for source and backup returns “Second copy confirmed,” 100%, and “All protected.” The product can therefore certify one physical copy as two.
-- Axe reports a serious 1.75:1 footer-link contrast failure on both legal routes.
-- “Stop after current file” does not cancel; the scan completes after showing an instruction to reload.
-
-Additional contract gaps include invisible 1×1 keyboard focus stops, no CSP, 30-second caching for hashed assets, no real 404, incomplete social/canonical metadata and standard route skeleton, and no `.factory/copy-audit.md`.
-
-## What passed
-
-- `npm ci`
-- `npm test` — 5 Vitest tests and 6 Playwright desktop/mobile runs
-- `npx tsc --noEmit`
-- `npm run build` — produced `dist/`
-- `npm audit --audit-level=high` — 0 vulnerabilities
-- Normal folder comparison, missing Live Photo detection, CSV/JSON export, malformed-input recovery, three-entry free history limit, license restore/invalid reconciliation
-- Desktop and 390 px mobile layout; no horizontal overflow or console/page errors
-- Main/result axe scan; reduced motion; same-origin normal-flow network behavior
-- PWA install/controller, offline reload with persisted history, manifest start URL offline, and update toast path
-- Lighthouse mobile: 97 Performance, 100 Accessibility, 100 Best Practices, 100 SEO; LCP 1.4 s, CLS 0
-- License API burst limiting: first observed 429 at request 31 with `Retry-After: 0`
-
-## Re-run
+## Verification performed on 2026-08-28 UTC
 
 ```sh
 npm ci
 npm test
-npx tsc --noEmit
+npm run lint
 npm run build
 npm audit --audit-level=high
 ```
 
-No product code was modified during verification. Only this handoff and `.factory/verification-1.md` were added/updated.
+- `npm test`: 6 Vitest scanner tests and 22 Playwright tests passed (desktop Chromium plus 390×844 mobile).
+- `npm run lint`: TypeScript `--noEmit` passed.
+- `npm run build`: passed and produced `dist/` with root `index.html`, `demo/`, privacy, terms, `404.html`, service worker, and static deployment policy.
+- `npm audit --audit-level=high`: 0 vulnerabilities.
+- Claims manifest check confirmed 11 claim IDs and exactly one matching test tag each.
+- Browser regressions cover same-folder rejection, actual cancellation/no saved report, seeded demo isolation/reset, exact renamed match, incomplete Live Photo pair, sampled read, CSV/JSON content, history limit/persistence, offline reload, local-only request policy, legal axe checks, 390px overflow, keyboard tab order, and skip link.
+- `@axe-core/playwright`: zero serious/critical findings on completed demo result and both legal routes, on desktop and mobile projects.
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173/ .factory/evidence`: 200, 548 ms load, title/lang/one h1/main present, zero missing alt text, zero unlabeled buttons, and zero console/page errors.
+- Lighthouse mobile: Performance 99, Accessibility 100, Best Practices 100, SEO 100; LCP 1.4 s and CLS 0. Desktop run scored 100/100/100/100 with LCP 0.3 s and CLS 0.
+- Built assets: JavaScript 31.97 KB raw / 12.13 KB gzip; CSS 14.91 KB raw / 4.27 KB gzip; no webfonts. Both remain below static-product budgets.
+
+## Known limits
+
+- Browser folder permissions do not expose absolute paths for directory-upload fallback. Equal roots are deliberately rejected; the File System Access path additionally detects nested directory handles.
+- A sampled read detects readable byte ranges, not media codec playback or a full restore. Keep originals until an independent restore succeeds.
+- The production factory deploy applies `dist/staticwebapp.config.json`; Vite preview does not emulate its HTTP header/404 behavior, so those are verified structurally in the build and should be rechecked at the live URL after deployment.
+
+## Deploy
+
+Static artifact: `dist/`. Push the committed `main` branch; the factory static deployment configuration consumes `dist/` and `staticwebapp.config.json`.
