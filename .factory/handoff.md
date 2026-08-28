@@ -52,3 +52,4 @@ Deployment was completed with `/opt/fleet/lib/deploy-static.sh photo-backup-sent
 - Live response includes the configured CSP, `Referrer-Policy`, and `X-Content-Type-Options`.
 - `https://photo-backup-sentinel.sociobot.in/demo/`: HTTP 200.
 - An unknown live route returned HTTP 404 and the authored recovery page.
+- Live `/opt/fleet/lib/verify-url.sh` check: HTTP 200, 609 ms load, zero console/page errors, one `h1`, `main`, `lang=en`, no missing image alt text, and no unlabeled buttons.
