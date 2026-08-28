@@ -1,80 +1,43 @@
-# Photo Backup Sentinel — build handoff
+# Photo Backup Sentinel — independent verification handoff
 
-## Shipped
+## Status: FAIL — do not release
 
-- A production Vite + vanilla TypeScript PWA with a product-specific
-  cassette-era zine interface at desktop and 390 px layouts.
-- Recursive local folder selection through the File System Access API, with a
-  directory-input fallback.
-- Streaming SHA-256 comparison of supported photo/video media. Matching is by
-  content, so renamed copies are recognized; only backup files with relevant
-  byte sizes are hashed.
-- Live Photo detection for same-stem still + MOV pairs, missing/recent filters,
-  exact-copy evidence, and a deterministic 10% first/last-block read sample.
-- Clear separation between byte-identical hash proof, sampled read proof, and
-  codec playback (which the product does not claim to verify).
-- IndexedDB check history (3 checks free, 30 with Pro), full current-report
-  JSON/CSV export, and JSON history import.
-- A $19 one-time Sentinel Pro offer using only the Sociobot checkout and daily
-  license verification contract, including URL token capture, cached offline
-  access, invalid-license reconciliation, and paste-to-restore. All safety
-  checks and exports remain free.
-- Versioned service-worker precaching of the complete interactive shell,
-  network fallback, update notification, install manifest, 192/512/maskable
-  icons, and a styled offline fallback.
-- Static `/privacy/` and `/terms/` routes; no analytics, third-party fonts,
-  runtime CDNs, or photo uploads.
-- Original generated hero art plus authored icon, prompt sidecar, and full
-  provenance/art direction in `.factory/design.md`.
+Independent verification was completed on 2026-08-28 UTC against candidate `d2f761a27ebba8bef57f57c000708fc8803f547a` and <https://photo-backup-sentinel.sociobot.in>. Production `index.html`, service worker, JS, and CSS are byte-for-byte identical to the candidate build, so the failures are in the candidate rather than deployment drift.
 
-## Verification
+Full evidence: [verification-1.md](verification-1.md).
 
-Run from a clean checkout:
+## Release blockers
+
+- `.factory/claims.json` is missing. No mandatory claim tests exist, while the site and README make many unlisted privacy, offline, export, persistence, and verification claims.
+- The cold first screen has no “Try it with sample data” action. `/demo` is only the ordinary app; there is no seeded sandbox, banner, reset/start controls, separate namespace, or `.factory/demo.md`.
+- Selecting the same folder for source and backup returns “Second copy confirmed,” 100%, and “All protected.” The product can therefore certify one physical copy as two.
+- Axe reports a serious 1.75:1 footer-link contrast failure on both legal routes.
+- “Stop after current file” does not cancel; the scan completes after showing an instruction to reload.
+
+Additional contract gaps include invisible 1×1 keyboard focus stops, no CSP, 30-second caching for hashed assets, no real 404, incomplete social/canonical metadata and standard route skeleton, and no `.factory/copy-audit.md`.
+
+## What passed
+
+- `npm ci`
+- `npm test` — 5 Vitest tests and 6 Playwright desktop/mobile runs
+- `npx tsc --noEmit`
+- `npm run build` — produced `dist/`
+- `npm audit --audit-level=high` — 0 vulnerabilities
+- Normal folder comparison, missing Live Photo detection, CSV/JSON export, malformed-input recovery, three-entry free history limit, license restore/invalid reconciliation
+- Desktop and 390 px mobile layout; no horizontal overflow or console/page errors
+- Main/result axe scan; reduced motion; same-origin normal-flow network behavior
+- PWA install/controller, offline reload with persisted history, manifest start URL offline, and update toast path
+- Lighthouse mobile: 97 Performance, 100 Accessibility, 100 Best Practices, 100 SEO; LCP 1.4 s, CLS 0
+- License API burst limiting: first observed 429 at request 31 with `Retry-After: 0`
+
+## Re-run
 
 ```sh
-npm install
+npm ci
 npm test
+npx tsc --noEmit
 npm run build
+npm audit --audit-level=high
 ```
 
-Results on 2026-08-28:
-
-- `npm test`: 5 Vitest unit tests and 6 Playwright tests passed.
-- Playwright covers the real folder-to-verdict path, renamed content match,
-  missing Live Photo motion half, local history, desktop, 390×844 mobile,
-  privacy/terms routes, axe, console errors, and explicit offline reload.
-- Axe: zero serious or critical violations in the completed-result state.
-- `/opt/fleet/lib/verify-url.sh`: title present, `lang=en`, one `h1`, `main`
-  present, zero images without alt text, zero unlabeled buttons, zero console or
-  page errors. Measured local production load: 543 ms.
-- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
-  SEO 100; LCP 1.5 s, total blocking time 0 ms, CLS 0.
-- Production build: 29.64 KB JS (11.33 KB gzip), 14.37 KB CSS (4.19 KB gzip).
-  The complete shell is also inlined into the cached document for reliable
-  cold-offline reload. Hero: 66 KB AVIF / 199 KB WebP. No webfonts.
-- `npm audit`: zero vulnerabilities.
-- `npm run build` reproducibly writes `dist/index.html`, `dist/privacy/`, and
-  `dist/terms/` with `dist/` as the deployment root.
-
-## Known limits
-
-- Browser/OS permissions require users to export iOS media first and mount
-  external drives or NAS shares as folders. Direct iPhone library access is not
-  available to a static PWA.
-- Live Photo pairing uses the common same-basename still + MOV convention. An
-  export tool that renames the two halves independently cannot be inferred
-  safely without reading private metadata.
-- “Recent” uses the filesystem modified time exposed by the browser; an export
-  tool may replace the original capture time with its copy time.
-- The read sample detects local read failures, not HEIC/MOV decoding or full
-  playback compatibility. Users are explicitly told to perform periodic real
-  restores and not delete originals based only on this report.
-- The factory must register the `photo-backup-sentinel` paid product and return
-  URL in the Sociobot billing engine before checkout can complete in production.
-
-## Suggested next steps
-
-Pilot with varied Apple/Google export structures and large mounted drives;
-measure repeated-check completion and repaired gaps. If browsers expose a
-portable streaming file-hash primitive in future, benchmark it against the
-current audited pure-JS streaming implementation.
+No product code was modified during verification. Only this handoff and `.factory/verification-1.md` were added/updated.
