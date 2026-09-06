@@ -42,4 +42,41 @@ describe('media scanner', () => {
   it('explains an empty or unsupported export', async () => {
     await expect(scanMedia([media('edits.AAE', 'sidecar')], [], 'Phone', 'Drive')).rejects.toThrow('no supported photos or videos');
   });
+
+  it('@claim:read-sample reads both edges of a deterministic 10 percent sample', async () => {
+    class TrackingFile extends File {
+      reads: { start?: number; end?: number }[] = [];
+
+      override slice(start?: number, end?: number, contentType?: string): Blob {
+        this.reads.push({ start, end });
+        return super.slice(start, end, contentType);
+      }
+    }
+
+    const makeFiles = () => {
+      const source: File[] = [];
+      const backup: TrackingFile[] = [];
+      for (let index = 0; index < 20; index += 1) {
+        const bytes = new Uint8Array(70_000).fill(index);
+        const suffix = String(index).padStart(2, '0');
+        source.push(new File([bytes], `IMG_${suffix}.JPG`, { lastModified: 1_700_000_000_000 }));
+        backup.push(new TrackingFile([bytes], `COPY_${suffix}.JPG`, { lastModified: 1_700_000_000_000 }));
+      }
+      return { source, backup };
+    };
+
+    const firstFiles = makeFiles();
+    const first = await scanMedia(firstFiles.source, firstFiles.backup, 'Phone', 'Drive');
+    const firstNames = first.items.filter(item => item.readState === 'sampled-readable').map(item => item.name).sort();
+    expect(firstNames).toEqual(['IMG_00.JPG', 'IMG_10.JPG']);
+    expect(first.sampledReadableCount).toBe(2);
+    const reads = firstFiles.backup.flatMap(file => file.reads);
+    expect(reads).toHaveLength(4);
+    expect(reads.filter(read => read.start === 0 && read.end === 65_536)).toHaveLength(2);
+    expect(reads.filter(read => read.start === 4_464 && read.end === 70_000)).toHaveLength(2);
+
+    const secondFiles = makeFiles();
+    const second = await scanMedia(secondFiles.source, secondFiles.backup, 'Phone', 'Drive');
+    expect(second.items.filter(item => item.readState === 'sampled-readable').map(item => item.name).sort()).toEqual(firstNames);
+  });
 });

@@ -1,0 +1,1 @@
+Check phone photo backups for missing files and incomplete Live Photos before deleting originals.

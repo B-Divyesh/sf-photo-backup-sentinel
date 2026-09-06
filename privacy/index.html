@@ -1,3 +1,58 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171713"><meta name="description" content="Read how Photo Backup Sentinel handles local check records and licenses."><link rel="canonical" href="https://photo-backup-sentinel.sociobot.in/privacy/"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icons/icon-192.png"><link rel="stylesheet" href="/legal.css"><title>Privacy — Photo Backup Sentinel</title></head>
-<body><a class="skip-link" href="#main">Skip to main content</a><header><a class="brand" href="/">PHOTO BACKUP SENTINEL</a><nav aria-label="Main navigation"><a href="/demo/">Demo</a><a href="/">Checker</a><a href="/terms/">Terms</a></nav></header><main id="main" tabindex="-1"><p class="label">Effective 28 August 2026</p><h1>Privacy,<br>plainly.</h1><p class="note"><strong>Your media stays on your device.</strong> The app has no media-upload service.</p><h2>What the app reads</h2><p>When you choose folders, the browser grants temporary read access to local files. The app reads supported media to calculate SHA-256 fingerprints and opens small edge samples of selected backup files. It does not change or copy those files. Folder access normally ends when the tab closes.</p><h2>What is stored locally</h2><p>IndexedDB stores up to three free-edition checks or 30 Pro checks. A check contains folder labels, filenames, relative paths, sizes, modified dates, SHA-256 hashes, and outcomes. Media bytes and EXIF or location fields are not stored. Clearing site data removes these local records. JSON export and import let you control them.</p><h2>Licenses and network access</h2><p>If you buy or restore Sentinel Pro, a license token and cached verification result are stored in localStorage. The token is sent to the Sociobot billing API no more than once per day for verification. Checkout is hosted by Sociobot/Dodo, the merchant of record.</p><h2>Tracking</h2><p>There are no advertising trackers, analytics SDKs, cookies, third-party fonts, or runtime CDN scripts in the app. Service-worker requests fetch this app’s own files.</p><h2>Your choices</h2><p>Export a report before clearing browser site data if you want to retain it. You can use the complete checking workflow without an account. For privacy questions, contact <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main><footer>Photo Backup Sentinel · Build 1.0.1 · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · Built by Param Factory</footer></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171713" />
+    <meta name="description" content="See how Photo Backup Sentinel handles local check records and licenses." />
+    <link rel="canonical" href="https://photo-backup-sentinel.sociobot.in/privacy/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Privacy — Photo Backup Sentinel" />
+    <meta property="og:description" content="See what the backup checker reads, stores, and sends." />
+    <meta property="og:image" content="https://photo-backup-sentinel.sociobot.in/assets/sentinel-social.webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A cassette, photo negatives, and two backup drives on an archival desk." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Privacy — Photo Backup Sentinel" />
+    <meta name="twitter:description" content="See what the backup checker reads, stores, and sends." />
+    <meta name="twitter:image" content="https://photo-backup-sentinel.sociobot.in/assets/sentinel-social.webp" />
+    <meta name="twitter:image:alt" content="A cassette, photo negatives, and two backup drives on an archival desk." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/legal.css" />
+    <title>Privacy — Photo Backup Sentinel</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header>
+      <a class="brand" href="/">PHOTO BACKUP SENTINEL</a>
+      <nav aria-label="Main navigation"><a href="/demo/">Demo</a><a href="/">Checker</a><a href="/terms/">Terms</a></nav>
+    </header>
+    <main id="main" tabindex="-1">
+      <p class="label">Effective 6 September 2026</p>
+      <h1>See how your data is handled</h1>
+      <p class="note"><strong>Your media stays on your device.</strong> The app has no media-upload service.</p>
+      <h2>What the app reads</h2>
+      <p>When you choose folders, the browser gives the app temporary read access to those local files.</p>
+      <p>The app calculates SHA-256 hashes and opens two small edge samples from selected backup files.</p>
+      <p>It does not change or copy files. Sentinel does not save folder access for later sessions.</p>
+      <h2>What is stored locally</h2>
+      <p>IndexedDB stores up to three free checks or 30 Pro checks.</p>
+      <p>Each check stores folder labels, file names, paths, sizes, dates, hashes, and outcomes.</p>
+      <p>It does not store media bytes, EXIF fields, or location fields. JSON export and import let you move these records.</p>
+      <h2>Licenses and network access</h2>
+      <p>Buying or restoring Pro stores a license token and cached result in localStorage.</p>
+      <p>The app sends that token only to Sociobot for verification. After a response, it waits at least 24 hours before checking again.</p>
+      <p>Checkout runs on Sociobot/Dodo, the merchant of record.</p>
+      <h2>Tracking</h2>
+      <p>The app has no advertising trackers, analytics SDKs, cookies, third-party fonts, or runtime CDN scripts.</p>
+      <p>Its service worker requests only this app’s own files.</p>
+      <h2>Your choices</h2>
+      <p>Export your records before clearing browser site data if you want to keep them.</p>
+      <p>You can run checks without an account.</p>
+      <p>For privacy questions, email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p>
+    </main>
+    <footer>Photo Backup Sentinel · Build 1.0.2 · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · Built by Param Factory</footer>
+  </body>
+</html>

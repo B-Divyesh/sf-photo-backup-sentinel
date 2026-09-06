@@ -1,0 +1,7 @@
+{
+  "source": "assets/src/sentinel-hero.png",
+  "output": "public/assets/sentinel-social.webp",
+  "operation": "center crop and resize to 1200x630, WebP quality 84",
+  "date": "2026-09-06",
+  "provenance": "Derived only from the product's original factory-generated hero artwork."
+}

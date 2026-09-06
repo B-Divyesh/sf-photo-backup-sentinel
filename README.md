@@ -1,32 +1,42 @@
 # Photo Backup Sentinel
 
-Check your photo backup before deleting originals. It is for phone owners who copy camera exports to an external drive or mounted NAS.
+Check a phone-photo backup before deleting originals. It is for iPhone and Android owners who copy exports to a drive or NAS.
 
-Try the finished sample at `/demo/`. It opens a seeded check in the `demo:photo-backup-sentinel` IndexedDB database, separate from real history. Use **Reset demo** to start the sample again or **Start for real** to discard the demo context.
+Open `/demo/` for a finished sample check. Demo records use a separate IndexedDB database and never enter real history.
+
+**Reset demo** replaces the sample record. **Start for real** deletes the Demo database before opening the real checker.
 
 ## What it does
 
 - Matches identical photo and video bytes, including renamed copies.
 - Reports incomplete still-plus-MOV Live Photo pairs.
-- Opens and reads a deterministic sample of matched backup files.
-- Exports the current report as CSV or Sentinel JSON.
-- Keeps the latest three free checks locally and retains them after refresh.
-- Works offline after a successful first load.
+- Reads both edges of a deterministic 10% sample of matched backup files.
+- Exports CSV and Sentinel JSON. A Sentinel JSON export can be imported later.
+- Keeps three free checks after refresh. A valid Pro license raises the limit to 30.
+- Works offline after one successful online visit, including scanning and saved history.
 
-Media stays in the browser during the sample check. The demo makes no cross-origin or write request. The checker does not copy files or replace a restore test.
+The checker reads selected files without changing or copying them. Stored reports contain metadata, hashes, and outcomes, never media bytes or EXIF/location fields.
 
-Sentinel Pro is a $19 one-time purchase for a 30-check local timeline. The safety check and exports are free.
+The Demo makes no cross-origin or write request and sets no cookie. The free workflow needs no account.
+
+## Sentinel Pro
+
+Sentinel Pro costs $19 once. It raises local history from three checks to 30.
+
+Buying opens the Sociobot hosted checkout. The app accepts returned or pasted licenses and verifies them through the Sociobot API.
+
+After a verification response, the app waits at least 24 hours before checking again. The safety check and exports remain free.
 
 ## Run locally
 
-Requires Node.js 20 or newer.
+Use Node.js 20 or newer.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the local URL and choose separate source and backup folders. The app rejects the same or overlapping folders because one location cannot be certified as a second copy.
+Open the shown URL. Choose a phone export and a separate backup folder.
 
 ## Verify and build
 
@@ -37,13 +47,19 @@ npm run build
 npm audit --audit-level=high
 ```
 
-`dist/` is the static deployment root. Playwright is pinned to 1.58.2; the Chromium binary must be available through `PLAYWRIGHT_BROWSERS_PATH` or installed with `npx playwright install chromium`.
+Each public claim and its exact command are listed in [`.factory/claims.json`](.factory/claims.json). The Demo contract is in [`.factory/demo.md`](.factory/demo.md).
 
-Every visitor-facing product claim is listed in [.factory/claims.json](.factory/claims.json), with its sandbox command. The demo contract is documented in [.factory/demo.md](.factory/demo.md).
+`npm run build` creates the static site in `dist/`. Deploy that directory with the product’s existing static deployment configuration.
+
+## Limits
+
+Browsers cannot read an iPhone library directly. Export the media first and mount the backup drive or NAS.
+
+A sampled read is not a playback or full restore test. Keep originals until an independent restore succeeds.
 
 ## Privacy and terms
 
-Read [/privacy/](privacy/index.html) and [/terms/](terms/index.html). No third-party fonts, runtime CDN scripts, analytics SDKs, or embedded payment provider are used. Sentinel Pro uses the Sociobot hosted checkout and verification endpoint.
+Read the [privacy notice](privacy/index.html) and [terms](terms/index.html). No third-party font, analytics script, or payment provider runs inside the app.
 
 ## License
 

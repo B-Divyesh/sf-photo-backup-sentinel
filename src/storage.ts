@@ -12,6 +12,15 @@ export function currentStorageName(): string {
   return namespace === 'demo' ? `demo:${DB_NAME}` : DB_NAME;
 }
 
+export function deleteDemoStorage(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(`demo:${DB_NAME}`);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error('Close other Demo tabs, then try again.'));
+  });
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(currentStorageName(), 1);

@@ -83,3 +83,6 @@ Prompt sheet:
 Generated with the factory Azure image deployment on 2026-08-28. Original to
 this product; source PNG and prompt sidecar are retained in `assets/src/`.
 
+The 1200×630 social card is a center crop of that original source. It was
+exported locally as WebP on 2026-09-06, without adding text, marks, or third-party
+material. Its derivation is recorded in `assets/src/sentinel-social.json`.
